@@ -13,6 +13,15 @@ var budgetController = (function() {
         this.value = value;
     };
     
+    var calculateTotal = function(type){
+        var sum = 0;
+        
+        data.allItems[type].forEach(function(cur){
+           sum += cur.value; 
+        });
+        
+        data.totals[type] = sum;
+    };
     
     var data = {
         allItems: {
@@ -22,39 +31,67 @@ var budgetController = (function() {
         totals: {
             exp: 0,
             inc: 0
-        }
+        },
+        budget: 0,
+        percentage: -1
     }
     
     return {
-      addItem: function(type, des, val){
-          var newItem, ID;
-          
-          // Creates new ID
-          // ID = last ID + 1
-          if(data.allItems[type].length > 0){
-            ID = data.allItems[type][data.allItems[type].length - 1].id + 1;    
-          } else{
-            ID = 0;  
-          }
-          
-          
-          // Creates the new item based on the type
-          if(type === 'exp'){
-              newItem = new Expense(ID, des, val);
-          } else if(type === 'inc'){
-              newItem = new Income(ID, des, val);
-          }
-          
-          // Pushes into structure
-          data.allItems[type].push(newItem);
-          
-          // Returns the new element
-          return newItem;
-      },
+        addItem: function(type, des, val){
+              var newItem, ID;
+
+              // Creates new ID
+              // ID = last ID + 1
+              if(data.allItems[type].length > 0){
+                ID = data.allItems[type][data.allItems[type].length - 1].id + 1;    
+              } else{
+                ID = 0;  
+              }
+
+
+              // Creates the new item based on the type
+              if(type === 'exp'){
+                  newItem = new Expense(ID, des, val);
+              } else if(type === 'inc'){
+                  newItem = new Income(ID, des, val);
+              }
+
+              // Pushes into structure
+              data.allItems[type].push(newItem);
+
+              // Returns the new element
+              return newItem;
+        },
+
+        calculateBudget: function(){
+            // Calculate total income and expenses
+            calculateTotal('inc');
+            calculateTotal('exp');
+
+            // Calculate the budget: income - expenses
+            data.budget = data.totals['inc'] - data.totals['exp'];
+
+            // Calculate the percentage of incomes we used
+            if(data.totals['inc'] > 0){
+                data.percentage = (data.totals['exp'] / data.totals['inc']) * 100;
+            } else{
+                data.percentage = -1;
+            }
+        
+        },
     
-      testing: function(){
-          console.log(data);
-      }
+        getBuget: function(){
+            return {
+                budget: data.budget,
+                totalInc: data.totals.inc,
+                totalExp: data.totals.exp,
+                percentage: data.percentage
+            }  
+        },
+    
+        testing: function(){
+              console.log(data);
+        }
         
     };
     
@@ -142,9 +179,12 @@ var controller = (function(budgetCtrl, UICtrl) {
     
     var updateBudget = function(){
         // 1. Calculate the budget
+        budgetCtrl.calculateBudget();
         // 2. Return the budget
+        var budget = budgetCtrl.getBuget();
         // 3. Update the UI
-    }
+        console.log(budget);
+    };
     
     var ctrlAddItem = function() {
         var input, newItem;
@@ -167,7 +207,7 @@ var controller = (function(budgetCtrl, UICtrl) {
             updateBudget();
         }
         
-    }
+    };
     
     return {
         init: function(){
